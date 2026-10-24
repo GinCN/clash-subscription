@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Download today's subscription
         shell: bash
@@ -39,19 +41,23 @@ jobs:
 
           echo "Subscription downloaded successfully."
 
-      - name: Commit updated subscription
+      - name: Commit and push update
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
+
           git config user.name "github-actions[bot]"
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add subscription.yaml
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
-          else
-            git commit -m "Update Clash subscription"
-            git push
+            exit 0
           fi
+
+          git commit -m "Update Clash subscription"
+
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
