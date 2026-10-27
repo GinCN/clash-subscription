@@ -47,7 +47,7 @@ jobs:
               sys.exit(1)
               
           if not data or 'proxies' not in data:
-              with open('temp-sub.yaml', 'r', encoding='utf-8') as f_in, open('clash-sub.yaml', 'w', encoding='utf-8') as f_out:
+              with open('temp-sub.yaml', 'r', encoding='utf-8') as f_in, open('subscription.yaml', 'w', encoding='utf-8') as f_out:
                   f_out.write(f'# 更新时间: {date_str}\n# 数据源: {url}\n\n')
                   f_out.write(f_in.read())
               sys.exit(0)
@@ -66,7 +66,7 @@ jobs:
                       group['proxies'] = [p for p in group['proxies'] if not str(p).startswith('📅 更新时间:')]
                       group['proxies'].insert(0, node_name)
                       
-          with open('clash-sub.yaml', 'w', encoding='utf-8') as f:
+          with open('subscription.yaml', 'w', encoding='utf-8') as f:
               f.write(f'# 更新时间: {date_str}\n# 数据源: {url}\n\n')
               yaml.dump(data, f, allow_unicode=True, sort_keys=False)
           PYEOF
@@ -78,9 +78,10 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add clash-sub.yaml
           
-          # 如果没有任何更改，直接退出
+          # 强制把生成的文件加入暂存区
+          git add -A subscription.yaml
+          
           if git diff --staged --quiet; then
             echo "✅ 文件内容没有变化，无需提交。"
             exit 0
@@ -88,10 +89,8 @@ jobs:
           
           git commit -m "Update subscription for $(date +'%Y-%m-%d')"
           
-          # 尝试推送，如果失败则给出明确提示
-          echo "正在推送到仓库..."
-          if ! git push; then
-            echo "❌ 推送失败！请检查是否已开启 Workflow permissions (Read and write permissions)。"
-            exit 1
-          fi
+          # 🔥 核心改变：使用强制推送 (-f)，无视任何冲突
+          echo "正在强制推送到仓库..."
+          git push origin HEAD:main -f
+          
           echo "✅ 推送成功！"
