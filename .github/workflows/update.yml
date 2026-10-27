@@ -15,8 +15,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # 关键修复：拉取完整的 git 历史，防止 rebase 因缺少历史提交而失败
           fetch-depth: 0
+
+      - name: Reset and Clean workspace
+        run: |
+          # 关键 1：强制拉取远程最新代码，并硬重置本地状态
+          git fetch origin main
+          git reset --hard origin/main
+          git clean -fd
+          # 关键 2：关闭 git pull 时的自动变基行为
+          git config pull.rebase false
 
       - name: Fetch and Process Subscription
         env:
@@ -77,7 +85,7 @@ jobs:
           python3 process.py
           rm temp-sub.yaml process.py
 
-      - name: Commit and push if changed
+      - name: Commit and force push
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -91,8 +99,8 @@ jobs:
           
           git commit -m "Update subscription for $(date +'%Y-%m-%d')"
           
-          # 关键修复：使用 --force-with-lease 替代 -f 更安全地强制覆盖远程分支
-          echo "正在推送到仓库..."
-          git push origin HEAD:main --force-with-lease
+          # 直接强制推送，绝不让 Git 尝试合并
+          echo "正在强制推送到仓库..."
+          git push origin HEAD:main -f
           
           echo "✅ 推送成功！"
