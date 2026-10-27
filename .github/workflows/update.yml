@@ -2,7 +2,7 @@ name: Update Clash Subscription
 
 on:
   schedule:
-    - cron: '0 0 * * *' # 每天 UTC 0点 (北京时间早上8点) 运行
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 permissions:
@@ -14,6 +14,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # 关键修复：拉取完整的 git 历史，防止 rebase 因缺少历史提交而失败
+          fetch-depth: 0
 
       - name: Fetch and Process Subscription
         env:
@@ -79,7 +82,6 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           
-          # 强制把生成的文件加入暂存区
           git add -A subscription.yaml
           
           if git diff --staged --quiet; then
@@ -89,8 +91,8 @@ jobs:
           
           git commit -m "Update subscription for $(date +'%Y-%m-%d')"
           
-          # 🔥 核心改变：使用强制推送 (-f)，无视任何冲突
-          echo "正在强制推送到仓库..."
-          git push origin HEAD:main -f
+          # 关键修复：使用 --force-with-lease 替代 -f 更安全地强制覆盖远程分支
+          echo "正在推送到仓库..."
+          git push origin HEAD:main --force-with-lease
           
           echo "✅ 推送成功！"
