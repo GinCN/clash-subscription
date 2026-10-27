@@ -1,63 +1,98 @@
-
 name: Update Clash Subscription
 
 on:
   schedule:
-    - cron: "10 8 * * *"
-      timezone: "Asia/Singapore"
-  workflow_dispatch:
+    # 每天 UTC 0点 (北京时间早上8点) 运行
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 允许手动触发测试
 
 permissions:
-  contents: write
+  contents: write # 赋予修改仓库文件的权限
 
 jobs:
   update:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Download today's subscription
-        shell: bash
+      - name: Fetch and Process Subscription
         run: |
-          set -euo pipefail
+          # 1. 获取北京时间
+          export TZ='Asia/Shanghai'
+          TODAY=$(date +'%Y%m%d')
+          FORMATTED_DATE=$(date +'%Y-%m-%d %H:%M:%S')
+          
+          # 2. 拼接链接并下载到临时文件
+          URL="https://node.freev2raynode.com/uploads/2026/10/1-${TODAY}.yaml"
+          echo "Downloading from: $URL"
+          curl -L -o temp-sub.yaml "$URL"
+          
+          # 3. 安装 Python 的 YAML 处理库
+          pip install pyyaml
+          
+          # 4. 使用 Python 安全地修改 YAML，插入展示节点
+          python3 -c "
+          import yaml
+          import sys
+          
+          try:
+              with open('temp-sub.yaml', 'r', encoding='utf-8') as f:
+                  data = yaml.safe_load(f)
+          except Exception as e:
+              print(f'解析 YAML 失败: {e}')
+              sys.exit(1)
+              
+          if not data or 'proxies' not in data:
+              print('文件中没有找到 proxies 列表，跳过插入。')
+              # 直接生成原文件
+              import shutil
+              shutil.copy('temp-sub.yaml', 'clash-sub.yaml')
+              sys.exit(0)
 
-          DATE=$(TZ=Asia/Singapore date +%Y%m%d)
-          YEAR=$(TZ=Asia/Singapore date +%Y)
-          MONTH=$(TZ=Asia/Singapore date +%m)
+          date_str = '${FORMATTED_DATE}'
+          node_name = f'📅 更新时间: {date_str}'
+          
+          # 创建一个虚假的展示节点
+          dummy_node = {
+              'name': node_name,
+              'type': 'ss',
+              'server': '127.0.0.1',
+              'port': 1,
+              'cipher': 'aes-128-gcm',
+              'password': 'dummy'
+          }
+          
+          # 移除旧的日期节点 (如果存在)
+          data['proxies'] = [p for p in data['proxies'] if not str(p.get('name', '')).startswith('📅 更新时间:')]
+          
+          # 将新日期节点插入到列表最前面
+          data['proxies'].insert(0, dummy_node)
+          
+          # 更新节点分组 (proxy-groups)，将其加入到对应的组里
+          if 'proxy-groups' in data:
+              for group in data['proxy-groups']:
+                  if 'proxies' in group:
+                      # 移除旧的日期节点名称
+                      group['proxies'] = [p for p in group['proxies'] if not str(p).startswith('📅 更新时间:')]
+                      # 插入新节点名称
+                      group['proxies'].insert(0, node_name)
+                      
+          # 保存为新文件，并在头部写入注释
+          with open('clash-sub.yaml', 'w', encoding='utf-8') as f:
+              f.write(f'# 更新时间: {date_str}\n')
+              f.write(f'# 数据源: ${URL}\n\n')
+              yaml.dump(data, f, allow_unicode=True, sort_keys=False)
+          "
+          
+          # 5. 清理临时文件
+          rm temp-sub.yaml
 
-          URL="https://node.freev2raynode.com/uploads/${YEAR}/${MONTH}/1-${DATE}.yaml"
-
-          echo "Trying: ${URL}"
-
-          curl --fail --silent --show-error \
-            --location --max-time 60 \
-            "$URL" -o subscription.yaml
-
-          test -s subscription.yaml
-
-          echo "Subscription downloaded successfully."
-
-      - name: Commit and push update
-        shell: bash
+      - name: Commit and push if changed
         run: |
-          set -euo pipefail
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add subscription.yaml
-
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
-            exit 0
-          fi
-
-          git commit -m "Update Clash subscription"
-
-          git fetch origin main
-          git rebase origin/main
-          git push origin HEAD:main
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add clash-sub.yaml
+          # 只有文件发生变化时才提交
+          git diff --staged --quiet || git commit -m "Update subscription for $(date +'%Y-%m-%d')"
+          git push
