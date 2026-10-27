@@ -17,26 +17,21 @@ jobs:
 
       - name: Fetch and Process Subscription
         env:
-          # 把变量传给环境，避免 Python 脚本里解析错误
           TZ: 'Asia/Shanghai'
         run: |
-          # 1. 获取日期
           TODAY=$(date +'%Y%m%d')
           export FORMATTED_DATE=$(date +'%Y-%m-%d %H:%M:%S')
           export URL="https://node.freev2raynode.com/uploads/2026/10/1-${TODAY}.yaml"
           
           echo "正在下载: $URL"
-          # 使用 -f 参数：如果遇到 404 等错误直接中断，避免下载一堆 HTML 错误代码
           curl -f -L -o temp-sub.yaml "$URL"
           if [ $? -ne 0 ]; then
              echo "❌ 下载失败！请检查今天的日期链接是否已经发布。"
              exit 1
           fi
           
-          # 2. 安装 PyYAML
           pip install pyyaml
           
-          # 3. 生成独立的 Python 脚本（彻底解决引号冲突问题）
           cat << 'PYEOF' > process.py
           import yaml, sys, os
           
@@ -52,19 +47,16 @@ jobs:
               sys.exit(1)
               
           if not data or 'proxies' not in data:
-              print('原文件里没有 proxies 列表，直接复制并添加注释。')
               with open('temp-sub.yaml', 'r', encoding='utf-8') as f_in, open('clash-sub.yaml', 'w', encoding='utf-8') as f_out:
                   f_out.write(f'# 更新时间: {date_str}\n# 数据源: {url}\n\n')
                   f_out.write(f_in.read())
               sys.exit(0)
           
-          # 构造假节点
           dummy_node = {
               'name': node_name, 'type': 'ss', 'server': '127.0.0.1', 
               'port': 1, 'cipher': 'aes-128-gcm', 'password': 'dummy'
           }
           
-          # 过滤旧节点并插入新节点
           data['proxies'] = [p for p in data['proxies'] if isinstance(p, dict) and not str(p.get('name', '')).startswith('📅 更新时间:')]
           data['proxies'].insert(0, dummy_node)
           
@@ -74,16 +66,12 @@ jobs:
                       group['proxies'] = [p for p in group['proxies'] if not str(p).startswith('📅 更新时间:')]
                       group['proxies'].insert(0, node_name)
                       
-          # 写出最终文件
           with open('clash-sub.yaml', 'w', encoding='utf-8') as f:
               f.write(f'# 更新时间: {date_str}\n# 数据源: {url}\n\n')
               yaml.dump(data, f, allow_unicode=True, sort_keys=False)
           PYEOF
           
-          # 执行脚本
           python3 process.py
-          
-          # 清理临时文件
           rm temp-sub.yaml process.py
 
       - name: Commit and push if changed
@@ -91,5 +79,19 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add clash-sub.yaml
-          git diff --staged --quiet || git commit -m "Update subscription for $(date +'%Y-%m-%d')"
-          git push
+          
+          # 如果没有任何更改，直接退出
+          if git diff --staged --quiet; then
+            echo "✅ 文件内容没有变化，无需提交。"
+            exit 0
+          fi
+          
+          git commit -m "Update subscription for $(date +'%Y-%m-%d')"
+          
+          # 尝试推送，如果失败则给出明确提示
+          echo "正在推送到仓库..."
+          if ! git push; then
+            echo "❌ 推送失败！请检查是否已开启 Workflow permissions (Read and write permissions)。"
+            exit 1
+          fi
+          echo "✅ 推送成功！"
