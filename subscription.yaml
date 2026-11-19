@@ -1,5 +1,5 @@
-# 更新时间: 2026-11-18 13:53:37
-# 数据源: https://node.freev2raynode.com/uploads/2026/11/1-20261118.yaml
+# 更新时间: 2026-11-19 13:53:48
+# 数据源: https://node.freev2raynode.com/uploads/2026/11/1-20261119.yaml
 
 mixed-port: 7890
 allow-lan: false
@@ -41,7 +41,7 @@ dns:
   - https://1.1.1.1/dns-query
   - https://1.0.0.1/dns-query
 proxies:
-- name: '📅 更新时间: 2026-11-18 13:53:37'
+- name: '📅 更新时间: 2026-11-19 13:53:48'
   type: ss
   server: 127.0.0.1
   port: 1
@@ -1321,7 +1321,7 @@ proxy-groups:
 - name: 🚀 节点选择
   type: select
   proxies:
-  - '📅 更新时间: 2026-11-18 13:53:37'
+  - '📅 更新时间: 2026-11-19 13:53:48'
   - ♻️ 自动选择
   - DIRECT
   - US美国(mibei77.com 米贝节点分享)
@@ -1420,7 +1420,7 @@ proxy-groups:
 - name: ♻️ 自动选择
   type: url-test
   proxies:
-  - '📅 更新时间: 2026-11-18 13:53:37'
+  - '📅 更新时间: 2026-11-19 13:53:48'
   - US美国(mibei77.com 米贝节点分享)
   - US美国(mibei77.com 米贝节点分享) (2)
   - US美国(mibei77.com 米贝节点分享) (3)
@@ -1520,7 +1520,7 @@ proxy-groups:
 - name: 🌍 国外媒体
   type: select
   proxies:
-  - '📅 更新时间: 2026-11-18 13:53:37'
+  - '📅 更新时间: 2026-11-19 13:53:48'
   - 🚀 节点选择
   - ♻️ 自动选择
   - 🎯 全球直连
@@ -1620,7 +1620,7 @@ proxy-groups:
 - name: 📲 电报信息
   type: select
   proxies:
-  - '📅 更新时间: 2026-11-18 13:53:37'
+  - '📅 更新时间: 2026-11-19 13:53:48'
   - 🚀 节点选择
   - 🎯 全球直连
   - US美国(mibei77.com 米贝节点分享)
@@ -1719,7 +1719,7 @@ proxy-groups:
 - name: Ⓜ️ 微软服务
   type: select
   proxies:
-  - '📅 更新时间: 2026-11-18 13:53:37'
+  - '📅 更新时间: 2026-11-19 13:53:48'
   - 🎯 全球直连
   - 🚀 节点选择
   - US美国(mibei77.com 米贝节点分享)
@@ -1818,7 +1818,7 @@ proxy-groups:
 - name: 🍎 苹果服务
   type: select
   proxies:
-  - '📅 更新时间: 2026-11-18 13:53:37'
+  - '📅 更新时间: 2026-11-19 13:53:48'
   - 🚀 节点选择
   - 🎯 全球直连
   - US美国(mibei77.com 米贝节点分享)
@@ -1917,26 +1917,26 @@ proxy-groups:
 - name: 🎯 全球直连
   type: select
   proxies:
-  - '📅 更新时间: 2026-11-18 13:53:37'
+  - '📅 更新时间: 2026-11-19 13:53:48'
   - DIRECT
   - 🚀 节点选择
   - ♻️ 自动选择
 - name: 🛑 全球拦截
   type: select
   proxies:
-  - '📅 更新时间: 2026-11-18 13:53:37'
+  - '📅 更新时间: 2026-11-19 13:53:48'
   - REJECT
   - DIRECT
 - name: 🍃 应用净化
   type: select
   proxies:
-  - '📅 更新时间: 2026-11-18 13:53:37'
+  - '📅 更新时间: 2026-11-19 13:53:48'
   - REJECT
   - DIRECT
 - name: 🐟 漏网之鱼
   type: select
   proxies:
-  - '📅 更新时间: 2026-11-18 13:53:37'
+  - '📅 更新时间: 2026-11-19 13:53:48'
   - 🚀 节点选择
   - 🎯 全球直连
   - ♻️ 自动选择
